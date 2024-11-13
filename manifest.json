@@ -1,0 +1,25 @@
+{
+    "manifest_version":3,
+    "name":"AutoPin",
+    "version":"1.0.0",
+    "description": "AutoPin Product in Tiktok livestream",
+    "icons": {
+    "16": "icon.jpg"
+    },
+   "content_scripts": [
+    {
+      "js": ["scripts/content.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "permissions": [
+    "contextMenus",
+    "scripting",
+    "storage",
+    "activeTab"
+  ]
+    
+}
