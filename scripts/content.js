@@ -7,9 +7,10 @@ if (window.isPinningScriptLoaded) {
     let pinTimeoutId = null;
     let unpinTimeoutId = null;
     let contextMenuHandler = null;
-  
+    let currentPinButton = null;
+
     // Lắng nghe tin nhắn từ background.js
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message) => {
       if (message.action === "startPinning") {
         startPinningProcess();
       } else if (message.action === "stopPinning") {
@@ -26,15 +27,21 @@ if (window.isPinningScriptLoaded) {
         contextMenuHandler = (event) => {
           event.preventDefault();
           const element = event.target;
-          const pinElement = element.closest(".arco-icon-pin");
+          const pinElement = element.closest("svg.arco-icon-pin");
           if (pinElement) {
             const pinButton = pinElement.closest("div.cursor-pointer");
             if (pinButton) {
-              alert("Bắt đầu ghim nhé!");
-              clickPinContinuously(pinButton);
+              if (currentPinButton && currentPinButton !== pinButton) {
+                clearTimeouts();
+                unpinCurrentButton();
+              }
+              
+              alert("Bắt đầu ghim");
+              currentPinButton = pinButton;
+              clickPinContinuously(currentPinButton);
             }
           } else {
-            alert("Chưa trúng nút ghim ní ơi!!");
+            alert("Không phải nút ghim");
           }
         };
   
@@ -45,18 +52,17 @@ if (window.isPinningScriptLoaded) {
     function clickPinContinuously(pinButton) {
       chrome.storage.local.get("isRunning", (data) => {
         if (!data.isRunning) {
-          clearTimeout(pinTimeoutId);
-          clearTimeout(unpinTimeoutId);
+          clearTimeouts();
           console.log("Đã dừng pin.");
           return;
         }
-  
-        console.log("Bắt đầu chu kỳ pin/unpin...");
         pinButton.click();
+        pinButton.style.backgroundColor = 'lightblue';
         console.log("Pinned!");
-  
+        
         unpinTimeoutId = setTimeout(() => {
           pinButton.click();
+          pinButton.style.backgroundColor = 'red';
           console.log("Unpinned!");
   
           pinTimeoutId = setTimeout(() => {
@@ -69,13 +75,30 @@ if (window.isPinningScriptLoaded) {
     }
   
     function stopPinningProcess() {
-      clearTimeout(pinTimeoutId);
-      clearTimeout(unpinTimeoutId);
+      clearTimeouts();
       if (contextMenuHandler) {
         document.removeEventListener("contextmenu", contextMenuHandler);
         contextMenuHandler = null;
         console.log("Đã dừng pin và gỡ bỏ sự kiện context menu.");
       }
     }
+    // Hàm để unpin nút hiện tại
+    function unpinCurrentButton() {
+      if (currentPinButton) {
+          currentPinButton.click();
+          currentPinButton.style.backgroundColor = '';
+          console.log("Đã unpin nút trước đó.");
+      }
+      currentPinButton = null;
+    }
+    function clearTimeouts() {
+        if (pinTimeoutId) {
+            clearTimeout(pinTimeoutId);
+            pinTimeoutId = null;
+        }
+        if (unpinTimeoutId) {
+            clearTimeout(unpinTimeoutId);
+            unpinTimeoutId = null;
+        }
+    }
   }
-  
